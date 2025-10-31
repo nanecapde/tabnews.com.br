@@ -1,7 +1,5 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-
 import user from 'models/user.js';
-
 import database from 'infra/database.js';
 import emailConfirmation from 'models/email-confirmation.js';
 import validator from 'models/validator.js';
