@@ -1,18 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 
+
 import { ActionList, Box, Button, Heading, IconButton, Overlay, Spinner } from '@/TabNewsUI';
 import { SearchIcon, XCircleFillIcon } from '@/TabNewsUI/icons';
 
+
 const searchURL = process.env.NEXT_PUBLIC_SEARCH_URL + process.env.NEXT_PUBLIC_SEARCH_ID;
+
 
 export default function useSearchBox() {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef();
 
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('gsc.q') || params.has('q')) {
+      setIsOpen(true);
+    }
+  }, []);
+
+
   function onClickSearchButton(e) {
     buttonRef.current = e.target;
     setIsOpen(true);
   }
+
 
   function SearchIconButton({ sx, ...props }) {
     return (
@@ -40,6 +53,7 @@ export default function useSearchBox() {
     );
   }
 
+
   function SearchBarButton({ sx, ...props }) {
     return (
       <Button
@@ -65,6 +79,7 @@ export default function useSearchBox() {
     );
   }
 
+
   function SearchBarMenuItem(props) {
     return (
       <ActionList.Item onSelect={onClickSearchButton} {...props}>
@@ -76,10 +91,12 @@ export default function useSearchBox() {
     );
   }
 
+
   function SearchBoxOverlay() {
     const [isLoading, setIsLoading] = useState(true);
     const inputRef = useRef(null);
     const suggestionsRef = useRef(null);
+
 
     const onInputRender = (input) => {
       setIsLoading(false);
@@ -87,16 +104,27 @@ export default function useSearchBox() {
       inputRef.current = input;
     };
 
+
     const onSuggestionsRender = (suggestionsBox) => {
       suggestionsRef.current = suggestionsBox;
     };
 
+
     const handleClose = () => {
       setIsOpen(false);
       clearGoogleBox();
+      const url = new URL(window.location);
+      if (url.searchParams.has('gsc.q') || url.searchParams.has('q')) {
+        url.searchParams.delete('gsc.q');
+        url.searchParams.delete('gsc.sort');
+        url.searchParams.delete('q');
+        window.history.pushState({}, '', url);
+      }
     };
 
+
     if (!isOpen) return null;
+
 
     return (
       <Overlay
@@ -131,12 +159,15 @@ export default function useSearchBox() {
             <IconButton icon={XCircleFillIcon} variant="invisible" onClick={handleClose} />
           </Box>
 
+
           <GoogleBox onInputRender={onInputRender} onSuggestionsRender={onSuggestionsRender} />
+
 
           <Box sx={{ display: 'flex', justifyContent: 'center', height: '26px', pt: '20px' }}>
             {isLoading && <Spinner size="medium" />}
           </Box>
         </Box>
+
 
         <style jsx global>{`
           .gsc-input-box {
@@ -160,6 +191,7 @@ export default function useSearchBox() {
     );
   }
 
+
   return {
     onClickSearchButton,
     SearchBarButton,
@@ -169,29 +201,35 @@ export default function useSearchBox() {
   };
 }
 
+
 function GoogleBox({ onInputRender = () => {}, onSuggestionsRender = () => {} } = {}) {
   useEffect(() => {
     const script = document.createElement('script');
     script.src = searchURL;
     document.head.append(script);
 
+
     const waitInputBox = waitForElm('.gsc-input-box');
     const waitSuggestionBox = waitForElm('.gssb_c');
     const waitAboveResultsBox = waitForElm('.gsc-above-wrapper-area');
+
 
     (async () => {
       const inputBox = await waitInputBox.start();
       const input = inputBox.querySelector('input');
       onInputRender(input);
 
+
       const suggestionBox = await waitSuggestionBox.start();
       onSuggestionsRender(suggestionBox);
     })();
+
 
     (async () => {
       const aboveResultsBox = await waitAboveResultsBox.start();
       aboveResultsBox.style.display = 'block';
     })();
+
 
     return () => {
       waitInputBox.cancel();
@@ -200,8 +238,10 @@ function GoogleBox({ onInputRender = () => {}, onSuggestionsRender = () => {} } 
     };
   }, [onInputRender, onSuggestionsRender]);
 
+
   return <div className="gcse-search" data-linktarget="_self"></div>;
 }
+
 
 function clearGoogleBox() {
   Array.from(document.getElementsByTagName('script')).forEach((elm) => {
@@ -210,11 +250,13 @@ function clearGoogleBox() {
     }
   });
 
+
   Array.from(document.getElementsByTagName('link')).forEach((elm) => {
     if (elm.href?.includes('google.com/')) {
       elm.remove();
     }
   });
+
 
   Array.from(document.getElementsByTagName('style')).forEach((elm) => {
     if (
@@ -226,9 +268,12 @@ function clearGoogleBox() {
     }
   });
 
+
   document.querySelectorAll('.gssb_c').forEach((elm) => elm.remove());
 
+
   let elm = document.getElementById('private_ratings');
+
 
   while (elm) {
     elm.parentElement?.remove();
@@ -236,14 +281,17 @@ function clearGoogleBox() {
   }
 }
 
+
 function waitForElm(selector) {
   let observer;
+
 
   const start = () => {
     return new Promise((resolve) => {
       if (document.querySelector(selector)) {
         return resolve(document.querySelector(selector));
       }
+
 
       observer = new MutationObserver(() => {
         if (document.querySelector(selector)) {
@@ -252,6 +300,7 @@ function waitForElm(selector) {
         }
       });
 
+
       observer.observe(document.body, {
         childList: true,
         subtree: true,
@@ -259,11 +308,13 @@ function waitForElm(selector) {
     });
   };
 
+
   const cancel = () => {
     if (observer) {
       observer.disconnect();
     }
   };
+
 
   return {
     cancel,
